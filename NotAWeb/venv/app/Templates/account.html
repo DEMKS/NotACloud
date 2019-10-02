@@ -1,0 +1,24 @@
+<html>
+    <head>
+        <link href="" rel="stylesheet">
+        <meta charset="UTF-8">
+        <title>Account</title>
+    </head>
+    <body>
+        <h1>Hello, {{login}}</h1>
+        <form action="/account" method="post" name="login" enctype=multipart/form-data>
+            <input type='file' name='file'>
+            <p>
+                У вас осталось: {{space}}Мб свободного места
+            </p>
+            <p><input type="submit" value="Load"></p>
+        </form>
+        <form action="/exit">
+
+            <input type="submit" value="Exit">
+        </form>
+
+
+    </body>
+
+</html>
