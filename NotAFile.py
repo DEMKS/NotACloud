@@ -1,13 +1,12 @@
+import _dummy_thread
 from sys import argv
 import random
 from os import system, makedirs, path
-
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QFileDialog, QSizePolicy
 import base64
 from socket import AF_INET, socket, SOCK_STREAM
 import threading
-from hashlib import md5
 from pathlib import Path
 import pbkdf2
 from functools import partial
@@ -15,7 +14,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QGr
 from PyQt5.QtCore import pyqtSlot, QParallelAnimationGroup, QPropertyAnimation, QPoint, QAnimationGroup, QSize
 from PyQt5.uic import loadUi
 from os import makedirs
-#Main variation , GLVars
+
+# Main variation , GLVars
 BUFFISZE = 5120 * 1024 * 2
 global GlLogin, GlPass, GlLoginHash, GlPassHash
 GlLogin, GlPass, GlLoginHash, GlPassHash = '', '', '', ''
@@ -74,11 +74,10 @@ class SubWindow(QMainWindow):
 
     def UploadButtonClicked(self):
         print("smth")
-        if(Send_login(self.LoginText.text(), self.PassText.text())):
+        if (Send_login(self.LoginText.text(), self.PassText.text())):
             window.__init__()
             self.ui.hide()
             mainmenu.Show()
-
 
     def Show(self):
         animation_group = QParallelAnimationGroup(self)
@@ -103,10 +102,10 @@ class SubWindow(QMainWindow):
 
 class MainMenu(QMainWindow):
     def UploadFile(self):
-        try:
-            Upload_File(GlLoginHash, GlPassHash)
-        except:
-            print("Something went wrong")
+       try:
+           Upload_File(GlLoginHash, GlPassHash)
+       except:
+           print("Something went wrong")
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -116,7 +115,7 @@ class MainMenu(QMainWindow):
         self.RefreshButton.clicked.connect(self.RefreshFiles)
 
     def RefreshFiles(self):
-         self.DisplayFiles(Request_Files(GlLoginHash, GlPassHash))
+        self.DisplayFiles(Request_Files(GlLoginHash, GlPassHash))
 
     def DisplayFiles(self, data):
         print("Displaying files")
@@ -134,21 +133,22 @@ class MainMenu(QMainWindow):
             prev += 1
             pixmap = QPixmap("./button.png")
 
-            #scriptDir = path.dirname(path.realpath(__file__))
-            #self.setWindowIcon(QtGui.QIcon(scriptDir + path.sep + 'button.png'))
+            # scriptDir = path.dirname(path.realpath(__file__))
+            # self.setWindowIcon(QtGui.QIcon(scriptDir + path.sep + 'button.png'))
 
-            print("SYS : + " + (data[prev-1])[len(str(data[prev-1]))-len(".mp3"):])
-            if((data[prev-1])[len(str(data[prev-1]))-len(".mp3"):] == ".mp3"):
-                print("FOUND MP3")
+            print("SYS : + " + (data[prev - 1])[len(str(data[prev - 1])) - len(".mp3"):])
+            if ((data[prev - 1])[len(str(data[prev - 1])) - len(".mp3"):] == ".mp3"):
                 buttons[(index, j)].setIcon(QIcon('MP3icon.jpg'))
-            elif((data[prev-1])[len(str(data[prev-1]))-len(".png"):] == ".png"):
+            elif ((data[prev - 1])[len(str(data[prev - 1])) - len(".png"):] == ".png"):
                 buttons[(index, j)].setIcon(QIcon('PNGicon.png'))
             elif ((data[prev - 1])[len(str(data[prev - 1])) - len(".html"):] == ".html"):
                 buttons[(index, j)].setIcon(QIcon('HTMLicon.jpg'))
-            buttons[(index, j)].clicked.connect(partial(DownloadFile, str(window.LoginHash), str(window.PassHash), str(data[prev-1])))
+                # buttons[(index, j)].setIconSize()
+            buttons[(index, j)].clicked.connect(
+                partial(DownloadFile, str(window.LoginHash), str(window.PassHash), str(data[prev - 1])))
             buttons[(index, j)].setSizePolicy(
-    QSizePolicy.Preferred,
-    QSizePolicy.Preferred)
+                QSizePolicy.Preferred,
+                QSizePolicy.Preferred)
             self.gridLayout.addWidget(buttons[(index, j)], index, j)
 
     def Show(self):
@@ -177,6 +177,7 @@ def DownloadFile(LoginHash, PassHash, Filename):
     finally:
         tcp_client.close()
 
+
 import base64
 
 
@@ -196,6 +197,7 @@ def FileBase64Dec(s, save_path, name):
 
 
 host_ip, server_port = "127.0.0.1", 7557
+
 
 def Upload_File(Login=GlLoginHash, Pass=GlPassHash):
     try:
@@ -218,12 +220,13 @@ def Upload_File(Login=GlLoginHash, Pass=GlPassHash):
             print(('U|' + str(pbkdf2.crypt(Login, salt="NotASalt", iterations=150)) + '|' + str(
                 pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))))
             print("Login = " + Login + "\nPass = " + Pass)
-            # tcp_client.sendall(bytes(("U|"+  str(Login) + "|" + str(Pass) + "|" + x.split("/")[len(x.split("/")) - 1]), encoding="utf8"))
             tcp_client.sendall(bytes("U|" + str(Login) + "|" + str(Pass) + "|", encoding="utf8") + bytes(
                 x.split("/")[len(x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
         print(path)
         received = tcp_client.recv(BUFFISZE)
         received = received.decode("utf8")
+    except:
+        print("Something went wrong")
     finally:
         tcp_client.close()
 
@@ -295,7 +298,6 @@ def Request_Files(LoginHash=GlLoginHash, PassHash=GlPassHash):
     finally:
         tcp_client.close()
         return received
-
 
 
 if __name__ == '__main__':
