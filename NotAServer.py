@@ -3,7 +3,7 @@ import socketserver
 import base64
 from hashlib import md5
 from pathlib import Path
-from os import makedirs, listdir
+from os import makedirs, listdir, remove
 import pbkdf2
 
 BUFFSIZE = 5120*1024*2
@@ -127,15 +127,23 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
 
             else:
                 self.request.sendall("Auth error".encode())
+        elif sector == "R":
+            #Removing file(Under development)
+            if ProcessLogin(data):
+                data = data.split('|')
+                print(data)
+                if(Path("./Uploads/"+data[1]+"/"+data[3]).is_file()):
+                    print("We are about to delete %s user's %s file" % (data[1], data[3]))
+                    remove("./Uploads/"+data[1]+"/"+data[3])
+                    self.request.sendall(bytes("File deleted", encoding="utf8"))
+            else:
+                self.request.sendall("Auth error".encode())
         else:
             self.request.sendall("Some error occurred during tests".encode())
             print(data)
 
 
 if __name__ == "__main__":
-    HOST, PORT = "localhost", 7557
-    # Init the TCP server object, bind it to the localhost on 9999 port
+    HOST, PORT = "", 7557
     tcp_server = socketserver.TCPServer((HOST, PORT), Handler_TCPServer)
-    # Activate the TCP server.
-    # To abort the TCP server, press Ctrl-C.
     tcp_server.serve_forever()
