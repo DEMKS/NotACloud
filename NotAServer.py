@@ -1,21 +1,18 @@
 import mysql.connector
 import socketserver
 import base64
-from hashlib import md5
+import base64
 from pathlib import Path
 from os import makedirs, listdir, remove
-import pbkdf2
 
-BUFFSIZE = 5120*1024*2
+BUFFSIZE = 5120 * 1024 * 2
 
 
-import base64
 def FileBase64Enc(path):
-    with open(path
-            , 'rb') as image:
+    with open(path, 'rb') as image:
         FileEnc = image.readlines()
     FileEnc = map(base64.b64encode, FileEnc)
-    return FileEnc;
+    return FileEnc
 
 
 def FileBase64Dec(s, save_path, name):
@@ -24,11 +21,13 @@ def FileBase64Dec(s, save_path, name):
         for i in s:
             file.write(i)
 
+
 def FileBase64Dec2(s, save_path, name):
     s = map(base64.b64decode, s)
     with open(save_path + name, 'wb') as file:
         for i in s:
             file.write(i)
+
 
 class Handler_TCPServer(socketserver.BaseRequestHandler):
     def __init__(self, request, client_address, server):
@@ -37,9 +36,10 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
     def handle(self):
         def ProcessLogin(data):
             print("Another data :" + data)
-            Login, Rpass = data.split("|")[1],data.split("|")[2]
+            Login, Rpass = data.split("|")[1], data.split("|")[2]
             print("Give me some Ls")
-            if(Login =='' or Rpass == ''):
+            if Login == '' or Rpass == '':
+                print("VALYA GAY")
                 return False
             DB = mysql.connector.connect(host="127.0.0.1", user="root", passwd="DonAcDum7557")
             cursor = DB.cursor()
@@ -58,7 +58,9 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
             if Rpass == Pass:
                 return True
             else:
+                print("RPASS {}".format(Rpass))
                 return False
+
         print("Connection")
         # self.request - TCP socket connected to the client
         data = self.request.recv(BUFFSIZE)
@@ -76,45 +78,45 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
                 self.request.sendall("Auth error".encode())
         elif sector == "U":
             print("GOT UPLOAD PACKET(Upload mode is in development and has no auth, so plz don't abuse it")
-            if (ProcessLogin(data)):
+            if ProcessLogin(data):
                 data = data.split("|")
                 print(data)
-                print("DATA[1] = "+ data[1])
+                print("DATA[1] = " + data[1])
                 Login, Filename = data[1], data[3]
                 data = data[4:]
-                print("DATA = "+ str(data))
-                if(Path("./Uploads/"+ Login).is_dir()):
-                    #in range(4, (len(data)-1)
+                print("DATA = " + str(data))
+                if Path("./Uploads/" + Login).is_dir():
+                    # in range(4, (len(data)-1)
                     FileBase64Dec(s=data, save_path="./Uploads/" + Login + "/", name=Filename)
                 else:
-                    makedirs("./Uploads/"+ Login)
+                    makedirs("./Uploads/" + Login)
                     print("MAKING FILE")
                     FileBase64Dec(s=data, save_path="./Uploads/" + Login + "/", name=Filename)
             else:
                 self.request.sendall("Auth error".encode())
         elif sector == "C":
-            if(ProcessLogin(data)):
+            if ProcessLogin(data):
                 print("Good login")
-                print(listdir("./Uploads/"+data.split("|")[1]))
-                print("./Uploads/"+data.split("|")[1])
+                print(listdir("./Uploads/" + data.split("|")[1]))
+                print("./Uploads/" + data.split("|")[1])
                 string = ''
-                for i in listdir("./Uploads/"+data.split("|")[1]):
-                    string+=str(i) + '|'
+                for i in listdir("./Uploads/" + data.split("|")[1]):
+                    string += str(i) + '|'
                 print("STRING : " + string)
                 self.request.sendall(string.encode())
             else:
                 self.request.sendall("Login is incorrect".encode())
-                print("Some errors were occured during logging in")
+                print("Some errors were occurred during logging in")
         elif sector == "D":
-            #There goes the download part
+            # There goes the download part
             if ProcessLogin(data):
                 print("Received file download packet : %s" % data)
                 print(data.split('|'))
                 data = data.split('|')
-                Filename = data[len(data)-1]
-                if(Path("./Uploads/"+data[1]+"/"+Filename).is_file()):
+                Filename = data[len(data) - 1]
+                if Path("./Uploads/" + data[1] + "/" + Filename.replace("/", "a")).is_file():
                     print("Filename is correct")
-                    fileenc = FileBase64Enc("./Uploads/"+data[1]+"/"+Filename)
+                    fileenc = FileBase64Enc("./Uploads/" + data[1] + "/" + Filename)
                     file = ''
                     for i in fileenc:
                         string = str(i)[:len(str(i)) - 1]
@@ -128,13 +130,13 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
             else:
                 self.request.sendall("Auth error".encode())
         elif sector == "R":
-            #Removing file(Under development)
+            # Removing file(Under development)
             if ProcessLogin(data):
                 data = data.split('|')
                 print(data)
-                if(Path("./Uploads/"+data[1]+"/"+data[3]).is_file()):
+                if Path("./Uploads/" + data[1] + "/" + data[3]).is_file():
                     print("We are about to delete %s user's %s file" % (data[1], data[3]))
-                    remove("./Uploads/"+data[1]+"/"+data[3])
+                    remove("./Uploads/" + data[1] + "/" + data[3])
                     self.request.sendall(bytes("File deleted", encoding="utf8"))
             else:
                 self.request.sendall("Auth error".encode())
