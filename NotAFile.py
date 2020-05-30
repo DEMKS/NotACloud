@@ -1,17 +1,16 @@
 """The main executable file of the NAC desktop client v 0.1.3"""
+from functools import partial
+from socket import AF_INET, socket, SOCK_STREAM
+from os import makedirs, path
 import base64
-import pbkdf2
 import threading
 from sys import argv
-from PyQt5 import QtCore
 from pathlib import Path
+import pbkdf2
+from PyQt5 import QtCore
 from PyQt5.uic import loadUi
-from functools import partial
-from os import makedirs, path
-from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtGui import QIcon, QFont
-from socket import AF_INET, socket, SOCK_STREAM
 from PyQt5.QtCore import QParallelAnimationGroup, QPropertyAnimation, QPoint, QAnimationGroup
 from PyQt5.QtWidgets import QApplication, QPushButton, QMainWindow, QGridLayout, \
     QFileDialog, QSizePolicy, QDialog, QWidget, QLabel, QHBoxLayout, QVBoxLayout
@@ -63,7 +62,8 @@ class LoginWindow(QMainWindow):
     def NotAButtonClicked(self):
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         if Path("./Cached.NAC").is_file():
-            print("Found login and password file, executing corresponding instructions....")
+            print(
+                "Found login and password file, executing corresponding instructions....")
             file = open("./Cached.NAC", "r")
             # could be optimized with "with" keyword
             GLLOGINHASH = str(file.readline())
@@ -71,8 +71,8 @@ class LoginWindow(QMainWindow):
             GLPASSHASH = str(file.readline())
             print(GLPASSHASH)
             print(GLLOGINHASH)
-            self.loginHash = GLLOGINHASH
-            self.PassHash = GLPASSHASH
+            self.loginhash = GLLOGINHASH
+            self.passwordhash = GLPASSHASH
             file = open("./login.NAC", "r")
             GLLOGIN = str(file.readline())
             print("login : " + GLLOGIN)
@@ -85,7 +85,7 @@ class LoginWindow(QMainWindow):
                 else:
                     self.ui.hide()
                     thr.subwindow.Show()
-            except:
+            except BaseException:
                 print("Something went wrong")
         else:
             thr.subwindow.Show()
@@ -117,28 +117,31 @@ class DragNDropButton(QPushButton):
         Upload_file(ByPath=True, filepath=self.path)
         print(GLLOGINHASH)
         print("EVENT ACCEPTED")
+        print(e)
 
 
 class TextEditor(QMainWindow):
     """Text editor class"""
 
-    def __init__(self, Filename):
+    def __init__(self, filename):
         QMainWindow.__init__(self)
         self.ui = loadUi("UI/TextEditor.ui", self)
-        self.Filename = "Downloads/" + Filename
-        DownloadFile(GLLOGINHASH, GLPASSHASH, Filename)
+        self.filename = "Downloads/" + filename
+        DownloadFile(GLLOGINHASH, GLPASSHASH, filename)
         try:
-            print(open("Downloads/" + str(Filename)).read())
-            self.textedit.setText(str(open("Downloads/" + str(Filename)).read()))
-        except:
+            print(open("Downloads/" + str(filename)).read())
+            self.textedit.setText(
+                str(open("Downloads/" + str(filename)).read()))
+        except BaseException:
             print("Something went wrong")
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_S:
             print("S IS PRESSED")
             print(self.textedit.toPlainText())
-            open(self.Filename, "w+").write(self.textedit.toPlainText())
-            UpdateFile(login=GLLOGINHASH, Pass=GLPASSHASH, Filename=self.Filename)
+            open(self.filename, "w+").write(self.textedit.toPlainText())
+            UpdateFile(login=GLLOGINHASH, Pass=GLPASSHASH,
+                       filename=self.filename)
 
     def Show(self):
         self.ui.show()
@@ -158,8 +161,10 @@ class SubWindow(QMainWindow):
         global GLLOGINHASH, GLPASSHASH
         print("Upload button clicked")
         if Send_login(self.LoginText.text(), self.PassText.text()):
-            GLLOGINHASH = pbkdf2.crypt(self.LoginText.text(), salt="NotASalt", iterations=150)
-            GLPASSHASH = pbkdf2.crypt(self.PassText.text(), salt="NotASalt", iterations=150)
+            GLLOGINHASH = pbkdf2.crypt(
+                self.LoginText.text(), salt="NotASalt", iterations=150)
+            GLPASSHASH = pbkdf2.crypt(
+                self.PassText.text(), salt="NotASalt", iterations=150)
             self.ui.hide()
             thr.mainmenu.Show()
         else:
@@ -214,12 +219,12 @@ class MainMenu(QMainWindow):
             if self.gridLayout.count() > 1:
                 w = self.gridLayout.itemAt(0).widget()
                 self.gridLayout.removeWidget(w)
-                w.hide()
+                w.setParent(None)
         else:
             print("else")
             if self.gridLayout.count() > 1:
                 w = self.gridLayout.itemAt(0)
-                self.gridLayout.removeWidget(w)
+                w.setParent(None)
                 print("Pered hidom")
             self.DisplayFiles(data)
 
@@ -241,15 +246,16 @@ class MainMenu(QMainWindow):
                 img = "PNGicon.png"
             elif data[prev - 1].split(".")[1:][0] == "html":
                 img = "HTMLicon.jpg"
-            Filename = str(data[prev])
-            actions = {"edit": partial(Edit_File, Filename),
-                       "delete": partial(Delete_File, GLLOGINHASH, GLPASSHASH, Filename),
-                       "download": partial(DownloadFile, GLLOGINHASH, GLPASSHASH, Filename)
+            filename = str(data[prev])
+            actions = {"edit": partial(Edit_File, filename),
+                       "delete": partial(Delete_File, GLLOGINHASH, GLPASSHASH, filename),
+                       "download": partial(DownloadFile, GLLOGINHASH, GLPASSHASH, filename)
                        }
-            buttons[(index, j)] = InitiateFileInterationButtons(Filename, actions)
+            buttons[(index, j)] = InitiateFileInterationButtons(
+                filename, actions)
             prev += 1
             self.gridLayout.addLayout(buttons[(index, j)], index, j)
-            print("initiated {}".format(Filename))
+            print("initiated {}".format(filename))
 
     def Show(self):
         print("Global login is supposed to be " + GLLOGIN)
@@ -266,52 +272,56 @@ class FileDialog(QDialog):
         self.setStyleSheet(ApplicationStyleSheet)
         self.ui = loadUi("UI/FileDialog.ui", self)
 
-    def Show(self, loginHash, PassHash, Filename):
-        self.DeleteButton.clicked.connect(partial(Delete_File, loginHash, PassHash, Filename))
+    def Show(self, loginhash, passwordhash, filename):
+        self.DeleteButton.clicked.connect(
+            partial(Delete_File, loginhash, passwordhash, filename))
         self.DeleteButton.setStyleSheet(ButtonStyleSheet)
-        self.EditButton.clicked.connect(partial(Edit_File, Filename))
+        self.EditButton.clicked.connect(partial(Edit_File, filename))
         self.EditButton.setStyleSheet(ButtonStyleSheet)
-        self.DownloadButton.clicked.connect(partial(DownloadFile, loginHash, PassHash, Filename))
+        self.DownloadButton.clicked.connect(
+            partial(DownloadFile, loginhash, passwordhash, filename))
         self.DownloadButton.setStyleSheet(ButtonStyleSheet)
         self.ui.show()
 
 
 def OpenUploadThread():
     try:
-        upload = UploadThread(thr.window.loginHash, thr.window.PassHash)
+        upload = UploadThread(thr.window.loginhash, thr.window.passwordhash)
         upload.start()
-    except:
+    except BaseException:
         print("Something went wrong")
 
 
-def DownloadFile(loginHash, PassHash, Filename):
+def DownloadFile(loginhash, passwordhash, filename):
     try:
         print("Download file called")
-        loginHash, PassHash, Filename = str(loginHash), str(PassHash), str(Filename)
-        print(f"D|{loginHash}|{PassHash}|{Filename}")
+        loginhash, passwordhash, filename = str(
+            loginhash), str(passwordhash), str(filename)
+        print(f"D|{loginhash}|{passwordhash}|{filename}")
         tcp_client = socket(AF_INET, SOCK_STREAM)
         # Establish connection to TCP server and exchange data
-        print("Downloading file : %s" % Filename)
+        print("Downloading file : %s" % filename)
         tcp_client.connect((host_ip, server_port))
-        tcp_client.sendall(bytes(f"D|{loginHash}|{PassHash}|{Filename}", encoding="utf8"))
+        tcp_client.sendall(
+            bytes(f"D|{loginhash}|{passwordhash}|{filename}", encoding="utf8"))
         received = tcp_client.recv(BUFFISZE)
         if not Path("./Downloads/").is_dir():
             makedirs("./Downloads/")
         received = received.decode("utf8")
         received = received.split("|")[1:]
         print(str(received))
-        FileBase64Dec(s=received, save_path="./Downloads/", name=Filename)
+        FileBase64Dec(s=received, save_path="./Downloads/", name=filename)
     finally:
         tcp_client.close()
 
 
-def UpdateFile(login, Pass, Filename):
+def UpdateFile(login, Pass, filename):
     try:
         print("Hello?")
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         tcp_client = socket(AF_INET, SOCK_STREAM)
         tcp_client.connect((host_ip, server_port))
-        x = Filename
+        x = filename
         fileenc = FileBase64Enc(x)
         file = ''
         print(fileenc)
@@ -325,17 +335,18 @@ def UpdateFile(login, Pass, Filename):
         print("login = " + login + "\nPass = " + Pass)
         tcp_client.sendall(bytes("U|" + str(login) + "|" + str(
             Pass) + "|", encoding="utf8") + bytes(x.split("/")[len(
-            x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
+                x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
         print(path)
         received = tcp_client.recv(BUFFISZE)
         received = received.decode("utf8")
-    except:
+    except BaseException:
         print("Something went wrong")
     finally:
         tcp_client.close()
 
 
 def FileBase64Enc(filepath):
+    """File base64 encryption"""
     with open(filepath, 'rb') as image:
         FileEnc = image.readlines()
     FileEnc = map(base64.b64encode, FileEnc)
@@ -343,6 +354,7 @@ def FileBase64Enc(filepath):
 
 
 def FileBase64Dec(s, save_path, name):
+    """File base64 decryption"""
     s = map(base64.b64decode, s)
     with open(save_path + name, 'wb') as file:
         for i in s:
@@ -350,6 +362,7 @@ def FileBase64Dec(s, save_path, name):
 
 
 def Upload_file(login=GLLOGINHASH, Pass=GLPASSHASH, ByPath=False, filepath=""):
+    """Fucntion that uploads file in base64 to the server"""
     try:
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         if login == "":
@@ -382,20 +395,23 @@ def Upload_file(login=GLLOGINHASH, Pass=GLPASSHASH, ByPath=False, filepath=""):
                     x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
         print(path)
         received = tcp_client.recv(BUFFISZE).decode("utf8")
-    except:
+    except BaseException:
         print("Something went wrong")
     finally:
         tcp_client.close()
     thr.mainmenu.RefreshFiles()
 
 
-def Delete_File(loginHash, PassHash, Filename):
+def Delete_File(loginhash, passwordhash, filename):
+    """Function that sends delete request to the server"""
     try:
-        loginHash, PassHash, Filename = str(loginHash), str(PassHash), str(Filename)
+        loginhash, passwordhash, filename = str(
+            loginhash), str(passwordhash), str(filename)
         tcp_client = socket(AF_INET, SOCK_STREAM)
-        print("Deleting file : %s" % Filename)
+        print("Deleting file : %s" % filename)
         tcp_client.connect((host_ip, server_port))
-        tcp_client.sendall(bytes(f"R|{loginHash}|{PassHash}|{Filename}", encoding="utf8"))
+        tcp_client.sendall(
+            bytes(f"R|{loginhash}|{passwordhash}|{filename}", encoding="utf8"))
         received = tcp_client.recv(BUFFISZE)
         received = received.decode()
         if received == "File deleted":
@@ -405,24 +421,26 @@ def Delete_File(loginHash, PassHash, Filename):
             print(received)
     finally:
         tcp_client.close()
-    print("Deleting file " + Filename)
+    print("Deleting file " + filename)
     thr.mainmenu.RefreshFiles()
     # We are working on this one
 
 
 def Send_login(login, Pass, Raw=False):
+    """Function that sends login to the server(raw or hashed)"""
     try:
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         try:
             tcp_client = socket(AF_INET, SOCK_STREAM)
             tcp_client.connect((host_ip, server_port))
-        except:
+        except BaseException:
             tcp_client = 1
             print("Socket failure")
         if Raw:
             print("Sending raw data....")
             print(('L|' + str(login) + '|' + str(Pass)))
-            tcp_client.sendall(bytes(('L|' + str(login) + '|' + str(Pass)), encoding="utf8"))
+            tcp_client.sendall(
+                bytes(('L|' + str(login) + '|' + str(Pass)), encoding="utf8"))
         else:
             print("Sending encrypted data")
             print(('L|' + str(pbkdf2.crypt(login, salt="NotASalt", iterations=150)) + '|' + str(
@@ -442,9 +460,11 @@ def Send_login(login, Pass, Raw=False):
                     file.write(Pass)
                     GLLOGINHASH, GLPASSHASH = login, Pass
                 else:
-                    file.write(str(pbkdf2.crypt(login, salt="NotASalt", iterations=150)))
+                    file.write(
+                        str(pbkdf2.crypt(login, salt="NotASalt", iterations=150)))
                     file.write("\n")
-                    file.write(str(pbkdf2.crypt(Pass, salt="NotASalt", iterations=150)))
+                    file.write(
+                        str(pbkdf2.crypt(Pass, salt="NotASalt", iterations=150)))
                     GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH = login, Pass, str(
                         pbkdf2.crypt(login, salt="NotASalt", iterations=150)), str(
                         pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))
@@ -458,54 +478,56 @@ def Send_login(login, Pass, Raw=False):
 
         else:
             Succeed = False
-            print("Either credentials are incorrect or our servers are unavailable right now")
+            print(
+                "Either credentials are incorrect or our servers are unavailable right now")
     finally:
         tcp_client.close()
     return Succeed
 
 
-def Request_Files(loginHash=GLLOGINHASH, PassHash=GLPASSHASH):
+def Request_Files(loginhash=GLLOGINHASH, passwordhash=GLPASSHASH):
     try:
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         tcp_client = socket(AF_INET, SOCK_STREAM)
         tcp_client.connect((host_ip, server_port))
-        tcp_client.sendall(bytes(("C|" + loginHash + '|' + PassHash), encoding="utf8"))
+        tcp_client.sendall(
+            bytes(("C|" + loginhash + '|' + passwordhash), encoding="utf8"))
         received = tcp_client.recv(BUFFISZE)
         received = received.decode("utf8")
         print("While requesting files received following response:" + received)
-    except:
+    except BaseException:
         print("File request returned an error")
     finally:
         tcp_client.close()
         return received
 
 
-def Edit_File(Filename):
+def Edit_File(filename):
     print("This feature is still in development")
-    edit = TextEditor(Filename)
+    edit = TextEditor(filename)
     edit.Show()
 
 
 class UploadThread(threading.Thread):
     """File upload (To stop the main thread from stopping)"""
 
-    def __init__(self, loginHash, PassHash):
+    def __init__(self, loginhash, passwordhash):
         threading.Thread.__init__(self)
-        self.loginHash, self.PassHash = loginHash, PassHash
+        self.loginhash, self.passwordhash = loginhash, passwordhash
 
     def run(self):
-        Upload_file(self.loginHash, self.PassHash)
+        Upload_file(self.loginhash, self.passwordhash)
 
 
 class DownloadThread(threading.Thread):
     """File download thread"""
 
-    def __init__(self, loginHash, PassHash, Filename):
+    def __init__(self, loginhash, passwordhash, filename):
         threading.Thread.__init__(self)
-        self.loginHash, self.PassHash, self.Filename = loginHash, PassHash, Filename
+        self.loginhash, self.passwordhash, self.filename = loginhash, passwordhash, filename
 
     def run(self):
-        DownloadFile(self.loginHash, self.PassHash, self.Filename)
+        DownloadFile(self.loginhash, self.passwordhash, self.filename)
 
 
 class UIThread(threading.Thread):
