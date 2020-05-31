@@ -223,7 +223,7 @@ class MainMenu(QMainWindow):
         else:
             print("else")
             if self.gridLayout.count() > 1:
-                w = self.gridLayout.itemAt(0)
+                w = self.gridLayout.itemAt(0).widget()
                 w.setParent(None)
                 print("Pered hidom")
             self.DisplayFiles(data)

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Files</title>
+</head>
+    <body>
+    <form action="/account">
+        <input type="submit" value="Back">
+    </form>
+    {% for i in s %}
+        <div id="content" class="box" style="left:0%;top:10%; display: grid; grid-template-rows: 15px 40px;">
+            <p><a href="files?file={{i}}">{{i}}</a>(<a href="files?delete={{i}}">Удалить?</a>, <a href="view?file={{i}}">Посмотреть?</a>)</p>
+        </div>
+    {% endfor %}
+    </body>
+</html>

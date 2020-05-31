@@ -1,23 +1,33 @@
 <html>
     <head>
-        <link href="" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
         <meta charset="UTF-8">
         <title>Account</title>
     </head>
     <body>
-        <h1>Hello, {{login}}</h1>
-        <form action="/account" method="post" name="login" enctype=multipart/form-data>
-            <input type='file' name='file'>
-            <p>
-                У вас осталось: {{space}}Мб свободного места
-            </p>
-            <p><input type="submit" value="Load"></p>
-        </form>
-        <form action="/exit">
 
-            <input type="submit" value="Exit">
-        </form>
+        <div id="content" class="box" >
+            <h1>Здравствуйте, {{login}}</h1>
+            <br>
+            {{t}}
+            <p>У вас осталось примерно {{space}}Мб свободного места</p>
+            <br>
+            <form action="/account" method="post" name="login" enctype=multipart/form-data>
+                <input type='file' name='file'>
+                <input type="submit" value="Load">
+            </form>
+                <br>
+                <form action="/files">
+                        <input type="submit" value="Files">
+                </form>
+                <br>
+                <form action="/exit">
 
+                    <p>
+                        <input type="submit" value="Exit">
+                    </p>
+                </form>
+        </div>
 
     </body>
 

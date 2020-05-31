@@ -1,24 +1,25 @@
 <html>
 
     <head>
-        <link href="Templates/css/templatemo_style.css" rel="stylesheet" type="text/css">
+        <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
         <meta charset="UTF-8">
         <title>Login</title>
     </head>
     <body>
-        <h1>Sign in</h1>
-        <form action="/login" method="post" name="login">
-            <p>
-                {{message}}<br>
-                Please enter you login:<br>
-                <input type="text" name="login"><br>
-                And you password:<br>
-                <input type="password" name="password"><br>
-            </p>
-            <p>{{form.remember_me}} Remember me</p>
-            <p><input type="submit" value="Sign In"></p>
-        </form>
-
+        <div id="content" class="box" >
+            <h1>Sign in</h1>
+            <form action="/login" method="post" name="login">
+                <p>
+                    {{message}}<br>
+                    Please enter you login:<br>
+                    <input type="text" name="login"><br>
+                    And you password:<br>
+                    <input type="password" name="password"><br>
+                </p>
+                <p>{{form.remember_me}} Remember me</p>
+                <p><input type="submit" value="Sign In"></p>
+            </form>
+        </div>
     </body>
 
 </html>

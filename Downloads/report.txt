@@ -1,0 +1,18 @@
+Bought 1 eth, price :11025.4999997
+Sold 1 eth, price :11249.4, profit :223.90000028
+Bought 1 eth, price :11100.9900031
+Sold 1 eth, price :11248.1774997, profit :371.08749691
+Bought 1 eth, price :11171.9999797
+Sold 1 eth, price :11260.0, profit :459.08751725
+Bought 1 eth, price :11159.875561
+Sold 1 eth, price :11200.0294966, profit :499.24145289
+Bought 1 eth, price :11000.0
+Sold 1 eth, price :11098.0, profit :597.24145289
+Bought 1 eth, price :10975.0
+Sold 1 eth, price :11000.0355001, profit :622.27695296
+Bought 1 eth, price :10898.7221678
+Sold 1 eth, price :10980.0, profit :703.55478511
+Bought 1 eth, price :10890.0
+Sold 1 eth, price :10986.9999999, profit :800.55478506
+Bought 1 eth, price :10900.0
+Sold 1 eth, price :10950.0, profit :850.55478507

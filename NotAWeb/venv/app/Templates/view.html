@@ -1,0 +1,28 @@
+<html>
+    <head>
+            <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+        <meta charset="UTF-8">
+        <title>View</title>
+    </head>
+    <body>
+        <form action="/files">
+            <input type="submit" value="Back">
+        </form>
+        {% if type == 'i' %}
+            <img src="{{file}}">
+        {% endif %}
+        {% if type == 't' %}
+            {% if not edit %}
+                <textarea>{% for i in file %}{{i}}{% endfor %}</textarea>
+                <p><a href="/view?file={{filename}}&edit">Изменить?</a></p>
+            {% endif %}
+            {% if edit %}
+                <form action="/view?file={{filename}}" method="post">
+                    <textarea name="text">{% for i in file %}{{i}}{% endfor %}</textarea>
+                    <input type="submit">
+                </form>
+
+            {% endif %}
+        {% endif %}
+    </body>
+</html>
