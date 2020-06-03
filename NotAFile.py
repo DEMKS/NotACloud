@@ -10,15 +10,15 @@ import pbkdf2
 from PyQt5 import QtCore
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import *
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import QParallelAnimationGroup, QPropertyAnimation, QPoint, QAnimationGroup
 from PyQt5.QtWidgets import QApplication, QPushButton, QMainWindow, QGridLayout, \
-    QFileDialog, QSizePolicy, QDialog, QWidget, QLabel, QHBoxLayout, QVBoxLayout
+    QFileDialog, QDialog, QLabel, QHBoxLayout, QVBoxLayout
 
 # Global variables declaration
 BUFFISZE = 5120 * 1024 * 2
 GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH = '', '', '', ''
-host_ip, server_port = "127.0.0.1", 7557
+HOST_IP, SERVER_PORT = "127.0.0.1", 7557
 ButtonStyleSheet = "background-color:#CFB3CD;" \
                    "border-radius: 15px;"
 ApplicationStyleSheet = "background-color:#ACBED8;"
@@ -26,10 +26,10 @@ ButtonStyleSheet = ""
 ApplicationStyleSheet = ""
 
 
-def InitiateFileInterationButtons(name, actions):
+def InitiateFileInterationButtons(name, actions, icon="unknow.png"):
     """Initiation of file interaction menu (actions is an dictionary)"""
     layout = QVBoxLayout()
-    pxmp = QPixmap("unknown.png")
+    pxmp = QPixmap(icon)
     lbl = QLabel()
     textlbl = QLabel(name)
     lbl.setPixmap(pxmp)
@@ -60,6 +60,7 @@ class LoginWindow(QMainWindow):
         self.NotAButton.clicked.connect(self.NotAButtonClicked)
 
     def NotAButtonClicked(self):
+        """Login handle"""
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         if Path("./Cached.NAC").is_file():
             print(
@@ -81,19 +82,21 @@ class LoginWindow(QMainWindow):
                 if Send_login(login=GLLOGINHASH, Pass=GLPASSHASH, Raw=True):
                     print("login succeed, continuing execution")
                     self.ui.hide()
-                    thr.mainmenu.Show()
+                    THR.mainmenu.Show()
                 else:
                     self.ui.hide()
-                    thr.subwindow.Show()
+                    THR.subwindow.Show()
             except BaseException:
                 print("Something went wrong")
         else:
-            thr.subwindow.Show()
+            THR.subwindow.Show()
 
     def Show(self):
+        """Shows the ui"""
         self.ui.show()
 
     def Hide(self):
+        """Hides the ui"""
         self.ui.hide()
 
 
@@ -136,6 +139,7 @@ class TextEditor(QMainWindow):
             print("Something went wrong")
 
     def keyPressEvent(self, event):
+        """Controls the file saving"""
         if event.key() == QtCore.Qt.Key_S:
             print("S IS PRESSED")
             print(self.textedit.toPlainText())
@@ -144,6 +148,7 @@ class TextEditor(QMainWindow):
                        filename=self.filename)
 
     def Show(self):
+        """Shows the ui"""
         self.ui.show()
 
 
@@ -154,10 +159,11 @@ class SubWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.setStyleSheet(ApplicationStyleSheet)
         self.ui = loadUi("UI/SubWindow.ui", self)
-        thr.window.show()
+        THR.window.show()
         self.UploadButton.clicked.connect(self.UploadButtonClicked)
 
     def UploadButtonClicked(self):
+        """Handles upload button press"""
         global GLLOGINHASH, GLPASSHASH
         print("Upload button clicked")
         if Send_login(self.LoginText.text(), self.PassText.text()):
@@ -166,11 +172,12 @@ class SubWindow(QMainWindow):
             GLPASSHASH = pbkdf2.crypt(
                 self.PassText.text(), salt="NotASalt", iterations=150)
             self.ui.hide()
-            thr.mainmenu.Show()
+            THR.mainmenu.Show()
         else:
             print("Something went wrong")
 
     def Show(self):
+        """Shows the ui with the animation"""
         print("Initiating animation")
         animation_group = QParallelAnimationGroup(self)
         for w in (self.LoginText, self.UploadButton, self.PassText):
@@ -190,6 +197,7 @@ class SubWindow(QMainWindow):
         self.ui.show()
 
     def Hide(self):
+        """Hides the ui"""
         self.ui.hide()
 
 
@@ -211,24 +219,25 @@ class MainMenu(QMainWindow):
         self.RefreshButton.clicked.connect(self.RefreshFiles)
 
     def RefreshFiles(self):
+        """Refreshes files"""
         self.newData(Request_Files(GLLOGINHASH, GLPASSHASH))
 
     def newData(self, data):
-        print("New data called")
-        if data == '':
-            if self.gridLayout.count() > 1:
-                w = self.gridLayout.itemAt(0).widget()
-                self.gridLayout.removeWidget(w)
-                w.setParent(None)
-        else:
-            print("else")
-            if self.gridLayout.count() > 1:
-                w = self.gridLayout.itemAt(0).widget()
-                w.setParent(None)
-                print("Pered hidom")
-            self.DisplayFiles(data)
+        """Clears the QGridLayout"""
+
+        def clearLayout(layout):
+            if layout is not None:
+                while layout.count():
+                    child = layout.takeAt(0)
+                    if child.widget() is not None:
+                        child.widget().deleteLater()
+                    elif child.layout() is not None:
+                        clearLayout(child.layout())
+        clearLayout(self.gridLayout)
+        self.DisplayFiles(data)
 
     def DisplayFiles(self, data):
+        """File displaying function"""
         print("Displaying files")
         print(data)
         data = data.split("|")[:len(data.split("|")) - 1]
@@ -240,24 +249,26 @@ class MainMenu(QMainWindow):
                 index = 0
             index += 1
             img = "unknown.png"
-            if data[prev - 1].split(".")[1:][0] == "mp3":
-                img = "MP3icon.jpg"
-            elif data[prev - 1].split(".")[1:][0] == "png":
-                img = "PNGicon.png"
-            elif data[prev - 1].split(".")[1:][0] == "html":
-                img = "HTMLicon.jpg"
+            if "." in data[prev - 1]:
+                if data[prev - 1].split(".")[1:][0] == "mp3":
+                    img = "MP3icon.jpg"
+                elif data[prev - 1].split(".")[1:][0] == "png":
+                    img = "PNGicon.png"
+                elif data[prev - 1].split(".")[1:][0] == "html":
+                    img = "HTMLicon.jpg"
             filename = str(data[prev])
-            actions = {"edit": partial(Edit_File, filename),
+            actions = {"edit": partial(edit_file, filename),
                        "delete": partial(Delete_File, GLLOGINHASH, GLPASSHASH, filename),
                        "download": partial(DownloadFile, GLLOGINHASH, GLPASSHASH, filename)
                        }
             buttons[(index, j)] = InitiateFileInterationButtons(
-                filename, actions)
+                filename, actions, img)
             prev += 1
             self.gridLayout.addLayout(buttons[(index, j)], index, j)
             print("initiated {}".format(filename))
 
     def Show(self):
+        """Shows the ui"""
         print("Global login is supposed to be " + GLLOGIN)
         self.ui.NameLabel.setText("NAME : " + GLLOGIN)
         self.RefreshFiles()
@@ -273,10 +284,11 @@ class FileDialog(QDialog):
         self.ui = loadUi("UI/FileDialog.ui", self)
 
     def Show(self, loginhash, passwordhash, filename):
+        """Shows the file dialog"""
         self.DeleteButton.clicked.connect(
             partial(Delete_File, loginhash, passwordhash, filename))
         self.DeleteButton.setStyleSheet(ButtonStyleSheet)
-        self.EditButton.clicked.connect(partial(Edit_File, filename))
+        self.EditButton.clicked.connect(partial(edit_file, filename))
         self.EditButton.setStyleSheet(ButtonStyleSheet)
         self.DownloadButton.clicked.connect(
             partial(DownloadFile, loginhash, passwordhash, filename))
@@ -285,15 +297,18 @@ class FileDialog(QDialog):
 
 
 def OpenUploadThread():
+    """Opens upload thread"""
     try:
-        upload = UploadThread(thr.window.loginhash, thr.window.passwordhash)
+        upload = UploadThread(THR.window.loginhash, THR.window.passwordhash)
         upload.start()
     except BaseException:
         print("Something went wrong")
 
 
 def DownloadFile(loginhash, passwordhash, filename):
+    """Downloads file from the server"""
     try:
+        loginhash, passwordhash = loginhash.replace("/", "!"), passwordhash.replace("/", "!")
         print("Download file called")
         loginhash, passwordhash, filename = str(
             loginhash), str(passwordhash), str(filename)
@@ -301,7 +316,7 @@ def DownloadFile(loginhash, passwordhash, filename):
         tcp_client = socket(AF_INET, SOCK_STREAM)
         # Establish connection to TCP server and exchange data
         print("Downloading file : %s" % filename)
-        tcp_client.connect((host_ip, server_port))
+        tcp_client.connect((HOST_IP, SERVER_PORT))
         tcp_client.sendall(
             bytes(f"D|{loginhash}|{passwordhash}|{filename}", encoding="utf8"))
         received = tcp_client.recv(BUFFISZE)
@@ -316,11 +331,13 @@ def DownloadFile(loginhash, passwordhash, filename):
 
 
 def UpdateFile(login, Pass, filename):
+    """Updates file on the server"""
     try:
+        login, Pass = login.replace("/", "!"), Pass.replace("/", "!")
         print("Hello?")
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         tcp_client = socket(AF_INET, SOCK_STREAM)
-        tcp_client.connect((host_ip, server_port))
+        tcp_client.connect((HOST_IP, SERVER_PORT))
         x = filename
         fileenc = FileBase64Enc(x)
         file = ''
@@ -364,13 +381,14 @@ def FileBase64Dec(s, save_path, name):
 def Upload_file(login=GLLOGINHASH, Pass=GLPASSHASH, ByPath=False, filepath=""):
     """Fucntion that uploads file in base64 to the server"""
     try:
+        login, Pass = login.replace("/", "!"), Pass.replace("/", "!")
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         if login == "":
             login = GLLOGINHASH
         if Pass == "":
             Pass = GLPASSHASH
         tcp_client = socket(AF_INET, SOCK_STREAM)
-        tcp_client.connect((host_ip, server_port))
+        tcp_client.connect((HOST_IP, SERVER_PORT))
         if not ByPath:
             dlg = QFileDialog()
             dlg.setFileMode(QFileDialog.AnyFile)
@@ -385,31 +403,34 @@ def Upload_file(login=GLLOGINHASH, Pass=GLPASSHASH, ByPath=False, filepath=""):
                 string = str(i)[:len(str(i)) - 1]
                 string = string[2:]
                 file += string + '|'
-            print(('U|' + str(pbkdf2.crypt(
-                login, salt="NotASalt", iterations=150)) + '|' + str(
-                pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))))
             print("Uploadlogin = " + login + "\nPass = " + Pass)
+            print((bytes("U|" + str(
+                login) + "|" + str(Pass) + "|", encoding="utf8") + bytes(
+                    x.split("/")[len(
+                        x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8")))
             tcp_client.sendall(bytes("U|" + str(
                 login) + "|" + str(Pass) + "|", encoding="utf8") + bytes(
-                x.split("/")[len(
-                    x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
+                    x.split("/")[len(
+                        x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
         print(path)
-        received = tcp_client.recv(BUFFISZE).decode("utf8")
+        tcp_client.recv(BUFFISZE).decode("utf8")
     except BaseException:
         print("Something went wrong")
     finally:
         tcp_client.close()
-    thr.mainmenu.RefreshFiles()
+    print("REFRESH")
+    THR.mainmenu.RefreshFiles()
 
 
 def Delete_File(loginhash, passwordhash, filename):
     """Function that sends delete request to the server"""
     try:
+        loginhash, passwordhash = loginhash.replace("/", "!"), passwordhash.replace("/", "!")
         loginhash, passwordhash, filename = str(
             loginhash), str(passwordhash), str(filename)
         tcp_client = socket(AF_INET, SOCK_STREAM)
         print("Deleting file : %s" % filename)
-        tcp_client.connect((host_ip, server_port))
+        tcp_client.connect((HOST_IP, SERVER_PORT))
         tcp_client.sendall(
             bytes(f"R|{loginhash}|{passwordhash}|{filename}", encoding="utf8"))
         received = tcp_client.recv(BUFFISZE)
@@ -422,17 +443,18 @@ def Delete_File(loginhash, passwordhash, filename):
     finally:
         tcp_client.close()
     print("Deleting file " + filename)
-    thr.mainmenu.RefreshFiles()
+    THR.mainmenu.RefreshFiles()
     # We are working on this one
 
 
 def Send_login(login, Pass, Raw=False):
     """Function that sends login to the server(raw or hashed)"""
     try:
+        login, Pass = login.replace("/", "!"), Pass.replace("/", "!")
         global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
         try:
             tcp_client = socket(AF_INET, SOCK_STREAM)
-            tcp_client.connect((host_ip, server_port))
+            tcp_client.connect((HOST_IP, SERVER_PORT))
         except BaseException:
             tcp_client = 1
             print("Socket failure")
@@ -447,12 +469,12 @@ def Send_login(login, Pass, Raw=False):
                 pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))))
             tcp_client.sendall(bytes(('L|' + str(
                 pbkdf2.crypt(login, salt="NotASalt", iterations=150)) + '|' + str(
-                pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))), encoding="utf8"))
+                    pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))), encoding="utf8"))
         received = tcp_client.recv(5120)
         received = received.decode("utf8")
         if received == "Auth succeed":
             print("Credentials are correct")
-            Succeed = True
+            succeed = True
             with open("Cached.NAC", "w") as file:
                 if Raw:
                     file.write(login)
@@ -467,7 +489,7 @@ def Send_login(login, Pass, Raw=False):
                         str(pbkdf2.crypt(Pass, salt="NotASalt", iterations=150)))
                     GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH = login, Pass, str(
                         pbkdf2.crypt(login, salt="NotASalt", iterations=150)), str(
-                        pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))
+                            pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))
 
             if not Raw:
                 with open("login.NAC", "w") as file:
@@ -477,19 +499,21 @@ def Send_login(login, Pass, Raw=False):
                 print("Raw input detected")
 
         else:
-            Succeed = False
+            succeed = False
             print(
                 "Either credentials are incorrect or our servers are unavailable right now")
     finally:
         tcp_client.close()
-    return Succeed
+    return succeed
 
 
 def Request_Files(loginhash=GLLOGINHASH, passwordhash=GLPASSHASH):
+    """Requests file list from the server"""
+    global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
     try:
-        global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
+        loginhash, passwordhash = loginhash.replace("/", "!"), passwordhash.replace("/", "!")
         tcp_client = socket(AF_INET, SOCK_STREAM)
-        tcp_client.connect((host_ip, server_port))
+        tcp_client.connect((HOST_IP, SERVER_PORT))
         tcp_client.sendall(
             bytes(("C|" + loginhash + '|' + passwordhash), encoding="utf8"))
         received = tcp_client.recv(BUFFISZE)
@@ -498,11 +522,11 @@ def Request_Files(loginhash=GLLOGINHASH, passwordhash=GLPASSHASH):
     except BaseException:
         print("File request returned an error")
     finally:
-        tcp_client.close()
         return received
 
 
-def Edit_File(filename):
+def edit_file(filename):
+    """File editing"""
     print("This feature is still in development")
     edit = TextEditor(filename)
     edit.Show()
@@ -535,6 +559,9 @@ class UIThread(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
+        self.window = 1
+        self.subwindow = 1
+        self.mainmenu = 1
 
     def run(self):
         app = QApplication(argv)
@@ -549,5 +576,5 @@ class UIThread(threading.Thread):
         app.exec_()
 
 
-thr = UIThread()
-thr.start()
+THR = UIThread()
+THR.start()

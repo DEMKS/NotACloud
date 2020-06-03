@@ -29,6 +29,19 @@ def FileBase64Dec2(s, save_path, name):
             file.write(i)
 
 
+def EncodeFilename(Filename):
+    Filename = str(base64.b64encode(bytes(Filename.encode("utf8"))))
+    Filename = Filename[2:len(Filename) - 1]
+    return Filename
+
+
+def DecodeFilename(Filename):
+    print(Filename)
+    Filename = str(base64.urlsafe_b64decode(Filename))
+    Filename = Filename[2:len(Filename) - 1]
+    return Filename
+
+
 class Handler_TCPServer(socketserver.BaseRequestHandler):
     def __init__(self, request, client_address, server):
         super().__init__(request, client_address, server)
@@ -77,12 +90,13 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
             else:
                 self.request.sendall("Auth error".encode())
         elif sector == "U":
-            print("GOT UPLOAD PACKET(Upload mode is in development and has no auth, so plz don't abuse it")
             if ProcessLogin(data):
                 data = data.split("|")
                 print(data)
                 print("DATA[1] = " + data[1])
                 Login, Filename = data[1], data[3]
+                print("Filename {}".format(Filename))
+                Filename = EncodeFilename(Filename)
                 data = data[4:]
                 print("DATA = " + str(data))
                 if Path("./Uploads/" + Login).is_dir():
@@ -101,7 +115,7 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
                 print("./Uploads/" + data.split("|")[1])
                 string = ''
                 for i in listdir("./Uploads/" + data.split("|")[1]):
-                    string += str(i) + '|'
+                    string += DecodeFilename(str(i)) + '|'
                 print("STRING : " + string)
                 self.request.sendall(string.encode())
             else:
@@ -114,6 +128,7 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
                 print(data.split('|'))
                 data = data.split('|')
                 Filename = data[len(data) - 1]
+                Filename = EncodeFilename(Filename)
                 if Path("./Uploads/" + data[1] + "/" + Filename.replace("/", "a")).is_file():
                     print("Filename is correct")
                     fileenc = FileBase64Enc("./Uploads/" + data[1] + "/" + Filename)
@@ -133,10 +148,11 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
             # Removing file(Under development)
             if ProcessLogin(data):
                 data = data.split('|')
+                filename = EncodeFilename(data[3])
                 print(data)
-                if Path("./Uploads/" + data[1] + "/" + data[3]).is_file():
-                    print("We are about to delete %s user's %s file" % (data[1], data[3]))
-                    remove("./Uploads/" + data[1] + "/" + data[3])
+                if Path("./Uploads/" + data[1] + "/" + filename).is_file():
+                    print("We are about to delete %s user's %s file" % (data[1], filename))
+                    remove("./Uploads/" + data[1] + "/" + filename)
                     self.request.sendall(bytes("File deleted", encoding="utf8"))
             else:
                 self.request.sendall("Auth error".encode())
