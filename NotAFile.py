@@ -233,6 +233,7 @@ class MainMenu(QMainWindow):
                         child.widget().deleteLater()
                     elif child.layout() is not None:
                         clearLayout(child.layout())
+
         clearLayout(self.gridLayout)
         self.DisplayFiles(data)
 
@@ -352,7 +353,7 @@ def UpdateFile(login, Pass, filename):
         print("login = " + login + "\nPass = " + Pass)
         tcp_client.sendall(bytes("U|" + str(login) + "|" + str(
             Pass) + "|", encoding="utf8") + bytes(x.split("/")[len(
-                x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
+            x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
         print(path)
         received = tcp_client.recv(BUFFISZE)
         received = received.decode("utf8")
@@ -406,20 +407,20 @@ def Upload_file(login=GLLOGINHASH, Pass=GLPASSHASH, ByPath=False, filepath=""):
             print("Uploadlogin = " + login + "\nPass = " + Pass)
             print((bytes("U|" + str(
                 login) + "|" + str(Pass) + "|", encoding="utf8") + bytes(
-                    x.split("/")[len(
-                        x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8")))
+                x.split("/")[len(
+                    x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8")))
             tcp_client.sendall(bytes("U|" + str(
                 login) + "|" + str(Pass) + "|", encoding="utf8") + bytes(
-                    x.split("/")[len(
-                        x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
+                x.split("/")[len(
+                    x.split("/")) - 1] + "|", encoding="utf8") + bytes(file, encoding="utf8"))
         print(path)
         tcp_client.recv(BUFFISZE).decode("utf8")
     except BaseException:
         print("Something went wrong")
     finally:
         tcp_client.close()
+
     print("REFRESH")
-    THR.mainmenu.RefreshFiles()
 
 
 def Delete_File(loginhash, passwordhash, filename):
@@ -469,7 +470,7 @@ def Send_login(login, Pass, Raw=False):
                 pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))))
             tcp_client.sendall(bytes(('L|' + str(
                 pbkdf2.crypt(login, salt="NotASalt", iterations=150)) + '|' + str(
-                    pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))), encoding="utf8"))
+                pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))), encoding="utf8"))
         received = tcp_client.recv(5120)
         received = received.decode("utf8")
         if received == "Auth succeed":
@@ -489,7 +490,7 @@ def Send_login(login, Pass, Raw=False):
                         str(pbkdf2.crypt(Pass, salt="NotASalt", iterations=150)))
                     GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH = login, Pass, str(
                         pbkdf2.crypt(login, salt="NotASalt", iterations=150)), str(
-                            pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))
+                        pbkdf2.crypt(Pass, salt="NotASalt", iterations=150))
 
             if not Raw:
                 with open("login.NAC", "w") as file:
@@ -512,10 +513,13 @@ def Request_Files(loginhash=GLLOGINHASH, passwordhash=GLPASSHASH):
     global GLLOGIN, GLPASS, GLLOGINHASH, GLPASSHASH
     try:
         loginhash, passwordhash = loginhash.replace("/", "!"), passwordhash.replace("/", "!")
+        print("Loginhash {}\nPasswordhash {}".format(loginhash, passwordhash))
         tcp_client = socket(AF_INET, SOCK_STREAM)
         tcp_client.connect((HOST_IP, SERVER_PORT))
         tcp_client.sendall(
             bytes(("C|" + loginhash + '|' + passwordhash), encoding="utf8"))
+        print((
+            bytes(("C|" + loginhash + '|' + passwordhash), encoding="utf8")))
         received = tcp_client.recv(BUFFISZE)
         received = received.decode("utf8")
         print("While requesting files received following response:" + received)

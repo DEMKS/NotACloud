@@ -30,16 +30,27 @@ def FileBase64Dec2(s, save_path, name):
 
 
 def EncodeFilename(Filename):
+    hasdot = False
+    if "." in Filename:
+        hasdot = True
+        suffix = Filename.split(".")[len(Filename.split(".")) - 1]
+        print("suffix")
+        print(suffix)
     Filename = str(base64.b64encode(bytes(Filename.encode("utf8"))))
     Filename = Filename[2:len(Filename) - 1]
+    if hasdot:
+        Filename = Filename + "." + suffix
     return Filename
 
 
 def DecodeFilename(Filename):
     print(Filename)
+    if "." in Filename:
+        Filename = Filename.split(".")[:len(Filename.split(".")) - 1][0]
     Filename = str(base64.urlsafe_b64decode(Filename))
     Filename = Filename[2:len(Filename) - 1]
     return Filename
+
 
 
 class Handler_TCPServer(socketserver.BaseRequestHandler):
@@ -50,9 +61,9 @@ class Handler_TCPServer(socketserver.BaseRequestHandler):
         def ProcessLogin(data):
             print("Another data :" + data)
             Login, Rpass = data.split("|")[1], data.split("|")[2]
+            Login, Rpass = Login.replace("!", "/"), Rpass.replace("!", "/")
             print("Give me some Ls")
             if Login == '' or Rpass == '':
-                print("VALYA GAY")
                 return False
             DB = mysql.connector.connect(host="127.0.0.1", user="root", passwd="DonAcDum7557")
             cursor = DB.cursor()
